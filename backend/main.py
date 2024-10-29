@@ -3,9 +3,10 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 import torch
 from PIL import Image
-import io
 import model as m
 import cv2
+import serial
+import time
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -26,10 +27,16 @@ prediction_result = {"prediction": None}
 # 웹캠에서 프레임을 캡처하고 예측하는 함수
 def capture_and_predict(frame):
     global prediction_result
-    
     # 프레임을 PIL 이미지로 변환
     image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)).convert('L')
+    arduino = serial.Serial('/dev/tty.usbserial-1130', 9600)
+    if arduino.is_open:
+        print("시리얼 포트가 열려있습니다.")
+    else:
+        print("시리얼 포트를 열 수 없습니다.")
     
+    time.sleep(2)
+
     # 이미지를 모델 입력 형식에 맞게 전처리
     preprocess = m.transforms.Compose([
         m.transforms.Grayscale(num_output_channels=1),
@@ -43,8 +50,13 @@ def capture_and_predict(frame):
         output = model(image_tensor)
         prediction = torch.argmax(output, dim=1).item()
     
-    # 예측 결과를 전역 변수에 저장
     prediction_result = {"prediction": prediction}
+    arduino_num = str(prediction) + '\n'
+    # 예측된 숫자를 아두이노로 전송
+    arduino.write(arduino_num.encode())
+    arduino.close()
+    
+    
 
 # 예측 결과를 반환하는 엔드포인트
 @app.get("/prediction")
@@ -68,6 +80,8 @@ async def video_feed():
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                
+                time.sleep(1/60)
         camera.release()
     
     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
