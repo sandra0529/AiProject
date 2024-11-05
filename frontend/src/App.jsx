@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {useState} from 'react';
 
 function App() {
   const videoFeedUrl = 'http://192.168.0.229:8000/video_feed';
