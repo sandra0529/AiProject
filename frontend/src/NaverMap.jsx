@@ -1,16 +1,39 @@
-// NaverMap.jsx
 import { useEffect, useRef, useState } from 'react';
 import drowsy_driving_icon from './assets/drowsy_driving_icon.png';
 
 function NaverMap({ isMapVisible }) {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
-  const [marker, setMarker] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null); // 초기값 제거
-  const [isMapScriptLoaded, setIsMapScriptLoaded] = useState(false); // 스크립트 로드 여부 추가
+  const [isMapScriptLoaded, setIsMapScriptLoaded] = useState(false);
+
+  const restStops = [
+    { 
+      name: '서부산휴게소', 
+      lat: 35.157258, 
+      lng: 128.948777, 
+      url: 'https://map.naver.com/v5/search/%EC%84%9C%EB%B6%80%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C'
+    },
+    { 
+      name: '김해금관가야휴게소', 
+      lat: 35.269933, 
+      lng: 129.003134, 
+      url: 'https://map.naver.com/v5/search/%EA%B9%80%ED%95%B4%EA%B8%88%EA%B4%80%EA%B0%80%EC%95%BC%ED%9C%B4%EA%B2%8C%EC%86%8C' 
+    },
+    { 
+      name: '양산휴게소', 
+      lat: 35.323172, 
+      lng: 129.056867, 
+      url: 'https://map.naver.com/v5/search/%EC%96%91%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C' 
+    },
+    { 
+      name: '장안휴게소(울산방향)', 
+      lat: 35.381033, 
+      lng: 129.248737, 
+      url: 'https://map.naver.com/v5/search/%EC%9E%A5%EC%95%88%ED%9C%B4%EA%B2%8C%EC%86%8C' 
+    },
+  ];
 
   useEffect(() => {
-    // 네이버 지도 API 스크립트가 로드되어 있는지 확인
     const loadMapScript = () => {
       if (!window.naver) {
         const script = document.createElement('script');
@@ -28,60 +51,68 @@ function NaverMap({ isMapVisible }) {
 
   useEffect(() => {
     if (isMapScriptLoaded) {
-      // 위치 요청 성공 시 위치를 업데이트
       const success = (location) => {
-        const newLocation = {
+        const currentLocation = {
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         };
-        setCurrentLocation(newLocation);
-        initializeMap(newLocation); // 위치 성공 시 지도 초기화
+        initializeMap(currentLocation);
       };
 
-      // 위치 요청 실패 시 기본 좌표 사용 (서울시청)
       const error = () => {
-        const defaultLocation = { lat: 37.5666103, lng: 126.9783882 };
-        setCurrentLocation(defaultLocation);
-        initializeMap(defaultLocation); // 위치 실패 시 기본 좌표로 지도 초기화
+        const defaultLocation = { lat: 37.5666103, lng: 126.9783882 }; // 서울시청 기본 좌표
+        initializeMap(defaultLocation);
       };
 
-      // 현재 위치 가져오기
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(success, error);
+      } else {
+        error();
       }
     }
-  }, [isMapScriptLoaded]); // 스크립트 로드 여부에 따라 위치 설정 실행
+  }, [isMapScriptLoaded]);
 
-  const initializeMap = (location) => {
+  const initializeMap = (currentLocation) => {
     if (window.naver && window.naver.maps) {
       const mapOptions = {
-        center: new window.naver.maps.LatLng(location.lat, location.lng),
-        zoom: 15,
+        center: new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
+        zoom: 10,
       };
       const newMap = new window.naver.maps.Map(mapRef.current, mapOptions);
       setMap(newMap);
 
-      // 현재 위치에 마커 생성 (아이콘 사용)
-      const locationMarker = new window.naver.maps.Marker({
+      const bounds = new window.naver.maps.LatLngBounds();
+
+      // 현재 위치 마커
+      const currentMarker = new window.naver.maps.Marker({
         map: newMap,
-        position: mapOptions.center,
+        position: new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
         icon: {
           content: `<div style="width:50px;height:50px;background:url(${drowsy_driving_icon}) no-repeat center/contain;"></div>`,
           anchor: new window.naver.maps.Point(20, 20),
         },
       });
-      setMarker(locationMarker);
+      bounds.extend(currentMarker.getPosition());
+
+      // 휴게소 마커 추가
+      restStops.forEach((stop) => {
+        const marker = new window.naver.maps.Marker({
+          map: newMap,
+          position: new window.naver.maps.LatLng(stop.lat, stop.lng),
+          title: stop.name,
+        });
+
+        // 마커 클릭 이벤트 추가
+        window.naver.maps.Event.addListener(marker, 'click', () => {
+          window.open(stop.url, '_blank');
+        });
+
+        bounds.extend(marker.getPosition());
+      });
+
+      newMap.fitBounds(bounds);
     }
   };
-
-  useEffect(() => {
-    if (map && marker && currentLocation) {
-      // 현재 위치 변경 시 지도 중심과 마커 위치를 업데이트
-      const newPosition = new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng);
-      map.setCenter(newPosition);
-      marker.setPosition(newPosition);
-    }
-  }, [currentLocation, map, marker]);
 
   if (!isMapVisible) return null;
 
