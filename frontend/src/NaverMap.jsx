@@ -5,6 +5,7 @@ function NaverMap({ isMapVisible }) {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [isMapScriptLoaded, setIsMapScriptLoaded] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState(null); // 현재 표시할 URL 상태 추가
 
   const restStops = [
     { 
@@ -17,7 +18,7 @@ function NaverMap({ isMapVisible }) {
       name: '김해금관가야휴게소', 
       lat: 35.269933, 
       lng: 129.003134, 
-      url: 'https://map.naver.com/v5/search/%EA%B9%80%ED%95%B4%EA%B8%88%EA%B4%80%EA%B0%80%EC%95%BC%ED%9C%B4%EA%B2%8C%EC%86%8C' 
+      url: 'https://map.naver.com/v5/search/김해금관가야휴게소' 
     },
     { 
       name: '양산휴게소', 
@@ -50,7 +51,7 @@ function NaverMap({ isMapVisible }) {
   }, []);
 
   useEffect(() => {
-    if (isMapScriptLoaded) {
+    if (isMapScriptLoaded && !currentUrl) { // URL이 없는 경우 지도 초기화
       const success = (location) => {
         const currentLocation = {
           lat: location.coords.latitude,
@@ -70,7 +71,7 @@ function NaverMap({ isMapVisible }) {
         error();
       }
     }
-  }, [isMapScriptLoaded]);
+  }, [isMapScriptLoaded, currentUrl]);
 
   const initializeMap = (currentLocation) => {
     if (window.naver && window.naver.maps) {
@@ -104,7 +105,7 @@ function NaverMap({ isMapVisible }) {
 
         // 마커 클릭 이벤트 추가
         window.naver.maps.Event.addListener(marker, 'click', () => {
-          window.open(stop.url, '_blank');
+          setCurrentUrl(stop.url); // 클릭 시 해당 URL로 변경
         });
 
         bounds.extend(marker.getPosition());
@@ -115,6 +116,25 @@ function NaverMap({ isMapVisible }) {
   };
 
   if (!isMapVisible) return null;
+
+  if (currentUrl) {
+    // 네이버 지도 화면 표시
+    return (
+      <div style={{ flex: 0.5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px solid #ddd', borderRadius: '10px', marginLeft: '20px' }}>
+        <iframe 
+          src={currentUrl} 
+          style={{ width: '100%', height: '100%', border: 'none' }} 
+          title="Naver Map"
+        />
+        <button 
+          style={{ marginTop: '10px', padding: '10px', cursor: 'pointer' }} 
+          onClick={() => setCurrentUrl(null)}
+        >
+          뒤로가기
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #ddd', borderRadius: '10px', marginLeft: '20px' }}>
