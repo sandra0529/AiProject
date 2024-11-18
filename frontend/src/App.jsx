@@ -6,8 +6,7 @@ import place_holder from './assets/place_holder.webp';
 import NaverMap from './NaverMap.jsx';
 
 function App() {
-  const videoFeedUrl = 'http://192.168.0.252:8000/video_feed';
-  const videoPredictionUrl = 'http://192.168.0.252:8000/prediction';
+  // const videoFeedUrl = 'http://192.168.0.252:8000/video_feed';
   const placeholderImg = place_holder;
   const [imgSrc, setImgSrc] = useState(placeholderImg);
   const [size, setSize] = useState(50);
@@ -41,7 +40,7 @@ function App() {
       setPopupMessage("");
       setShowMap(false); // 종료 시 지도 숨김
     } else {
-      setImgSrc(videoFeedUrl);
+      // setImgSrc(videoFeedUrl);
     }
     setIsRunning(!isRunning);
   };
@@ -51,43 +50,39 @@ function App() {
       const interval = setInterval(() => {
         if (isAlertActive) return;
 
-        fetch(videoPredictionUrl)
-          .then((response) => response.json())
-          .then((jsonData) => {
-            const prediction = jsonData.prediction;
-            console.log("Prediction Value:", prediction);
+        // FastAPI 신호 대신 랜덤한 졸음 데이터 생성
+        const prediction = Math.round(Math.random()); // 0 또는 1을 랜덤으로 생성
+        console.log("Prediction Value (Random):", prediction);
 
-            if (prediction === 0) {
-              console.log("졸음운전 중입니다. 환기를 하십시오.");
-              setPopupMessage("졸음운전 중입니다. 환기를 하십시오.");
-              setIsAlertActive(true);
-              setShowMap(true);  // 졸음운전 감지 시 지도 표시
-              alarmAudioRef.current.play();
-              alarmAudioRef.current.onended = () => {
-                emergencyVoiceAudioRef.current.volume = voiceVolume;
-                emergencyVoiceAudioRef.current.play();
-                emergencyVoiceAudioRef.current.onended = () => {
-                  setPopupMessage("");
-                  setIsAlertActive(false);
-                };
-              };
-            } else if (prediction === 1) {
-              console.log("졸음운전이 의심됩니다. 주의하세요");
-              setPopupMessage("졸음운전이 의심됩니다. 주의하세요");
-              setIsAlertActive(true);
-              setShowMap(true);  // 졸음운전 의심 시 지도 표시
-              alarmAudioRef.current.play();
-              alarmAudioRef.current.onended = () => {
-                suspicionVoiceAudioRef.current.volume = voiceVolume;
-                suspicionVoiceAudioRef.current.play();
-                suspicionVoiceAudioRef.current.onended = () => {
-                  setPopupMessage("");
-                  setIsAlertActive(false);
-                };
-              };
-            }
-          })
-          .catch((error) => console.error("Error fetching data:", error));
+        if (prediction === 0) {
+          console.log("졸음운전 중입니다. 환기를 하십시오.");
+          setPopupMessage("졸음운전 중입니다. 환기를 하십시오.");
+          setIsAlertActive(true);
+          setShowMap(true);  // 졸음운전 감지 시 지도 표시
+          alarmAudioRef.current.play();
+          alarmAudioRef.current.onended = () => {
+            emergencyVoiceAudioRef.current.volume = voiceVolume;
+            emergencyVoiceAudioRef.current.play();
+            emergencyVoiceAudioRef.current.onended = () => {
+              setPopupMessage("");
+              setIsAlertActive(false);
+            };
+          };
+        } else if (prediction === 1) {
+          console.log("졸음운전이 의심됩니다. 주의하세요");
+          setPopupMessage("졸음운전이 의심됩니다. 주의하세요");
+          setIsAlertActive(true);
+          setShowMap(true);  // 졸음운전 의심 시 지도 표시
+          alarmAudioRef.current.play();
+          alarmAudioRef.current.onended = () => {
+            suspicionVoiceAudioRef.current.volume = voiceVolume;
+            suspicionVoiceAudioRef.current.play();
+            suspicionVoiceAudioRef.current.onended = () => {
+              setPopupMessage("");
+              setIsAlertActive(false);
+            };
+          };
+        }
       }, 1000);
 
       return () => clearInterval(interval);
