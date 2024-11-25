@@ -7,8 +7,8 @@ import place_holder from './assets/place_holder.webp';
 import NaverMap from './NaverMap.jsx';
 
 function App() {
-  const videoFeedUrl = 'http://192.168.0.252:8000/video_feed';
-  const videoPredictionUrl = 'http://192.168.0.252:8000/prediction';
+  const videoFeedUrl = 'http://192.168.0.5:8000/video_feed';
+  const videoPredictionUrl = 'http://192.168.0.5:8000/prediction';
   const placeholderImg = place_holder;
   const [imgSrc, setImgSrc] = useState(placeholderImg);
   const [size, setSize] = useState(50);
