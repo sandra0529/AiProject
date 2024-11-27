@@ -107,7 +107,7 @@ async def get_classification_endpoint():
 # 아두이노에 JSON 데이터 전달(만약 프론트엔드에서 시작안할 시 기본값 0만 줌)
 @app.get("/arduino_signal")
 async def get_signal() :
-    return JSONResponse(content=classification)
+    return classification["classification"]
 
 # 실시간 비디오 스트리밍
 @app.get("/video_feed")
