@@ -35,9 +35,9 @@ def get_classification(detection_list):
     for detection in detection_list:
         for cls in detection:
             if cls > 0:  # 소분류가 0(미확인)이 아닌 경우만 처리
-                if cls < 3:  # 1(운전하다), 2(꾸벅꾸벅 졸다): 긴급
+                if cls == 1:  # 1(꾸벅꾸벅 졸다) 긴급
                     counts[1] += 1
-                else:  # 나머지는 의심
+                else:  # 2(하품), 3(박수치다), 4(뺨을 때리다), 5(목을 만지다), 6(팔주무르기), 7(눈비비기)
                     counts[2] += 1
 
     # 대분류 판단
