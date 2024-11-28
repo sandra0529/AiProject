@@ -5,10 +5,9 @@ import suspicionVoiceAlertSound from './assets/suspicion_voice_alert.m4a';
 import songSample from './assets/sample_song.mp3'; // 사용자 노래 추가용 샘플 파일
 import place_holder from './assets/place_holder.webp';
 import NaverMap from './NaverMap.jsx';
+import './App.css';
 
 function App() {
-  const videoFeedUrl = 'http://192.168.0.5:8000/video_feed';
-  const videoPredictionUrl = 'http://192.168.0.5:8000/prediction';
   const placeholderImg = place_holder;
   const [imgSrc, setImgSrc] = useState(placeholderImg);
   const [size, setSize] = useState(50);
@@ -25,6 +24,7 @@ function App() {
   const emergencyVoiceAudioRef = useRef(new Audio(emergencyVoiceAlertSound));
   const suspicionVoiceAudioRef = useRef(new Audio(suspicionVoiceAlertSound));
   const songAudioRef = useRef(new Audio(songSample)); // 추가: 노래 재생용 Ref
+  const videoRef = useRef(null); // 비디오 요소 참조
   const imageRef = useRef(null);
 
   const handleAlarmVolumeChange = (event) => {
@@ -41,67 +41,39 @@ function App() {
 
   const toggleRunning = () => {
     if (isRunning) {
-      setImgSrc(placeholderImg);
       setPopupMessage('');
       setShowMap(false);
+      stopWebcam();
     } else {
-      setImgSrc(videoFeedUrl);
+      startWebcam();
     }
     setIsRunning(!isRunning);
   };
 
-  useEffect(() => {
-    if (isRunning) {
-      const interval = setInterval(() => {
-        if (isAlertActive) return;
-  
-        fetch(videoPredictionUrl)
-          .then((response) => response.json())
-          .then((jsonData) => {
-            const classification = jsonData.classification;
-            console.log("Prediction Value:", classification);
-  
-            if(classification === 0) {
-              console.log('정상 상태: 운전자 이상 행동이 없습니다.');
-              setPopupMessage('');
-            } else if(classification === 1) {
-              console.log('졸음운전 중입니다. 환기를 하십시오.');
-              setPopupMessage('졸음운전 중입니다. 환기를 하십시오.');
-              setIsAlertActive(true);
-              setShowMap(true);
-              playAlert(() => {
-                emergencyVoiceAudioRef.current.volume = voiceVolume;
-                emergencyVoiceAudioRef.current.play();
-                emergencyVoiceAudioRef.current.onended = () => {
-                  setPopupMessage('');
-                  setIsAlertActive(false);
-                };
-              });
-            } else if (classification === 2) {
-              console.log('졸음운전이 의심됩니다. 주의하세요.');
-              setPopupMessage('졸음운전 의심됩니다. 주의하세요.');
-              setIsAlertActive(true);
-              setShowMap(true);
-              playAlert(() => {
-                suspicionVoiceAudioRef.current.volume = voiceVolume;
-                suspicionVoiceAudioRef.current.play();
-                suspicionVoiceAudioRef.current.onended = () => {
-                  setPopupMessage('');
-                  setIsAlertActive(false);
-                };
-              });
-            }
-          })
-          .catch((error) => {
-            console.error("Prediction Fetch Error:", error);
-          });
-      }, 1000);
-  
-      return () => clearInterval(interval);
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing webcam:', error);
     }
-  }, [isRunning, voiceVolume, isAlertActive]);
-  
+  };
 
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopWebcam(); // 컴포넌트 언마운트 시 웹캠 스트림 종료
+    };
+  }, []);
 
   // 추가: 알림(경고음 또는 노래) 재생 함수
   const playAlert = (onEndCallback) => {
@@ -115,44 +87,27 @@ function App() {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-      <div style={{ flex: showMap ? 0.5 : 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="container">
+      <div className={showMap ? "leftPaneWithMap" : "leftPane"}>
         {isVisible && (
-          <div style={{ position: 'relative', width: `${size}%` }}>
-            <img
-              ref={imageRef}
-              src={imgSrc}
-              alt="Video Stream"
-              onError={() => setImgSrc(placeholderImg)}
-              style={{
-                width: '100%',
-                height: 'auto',
-                objectFit: 'contain',
-              }}
-            />
+          <div className="imageWrapper" style={{ width: `${size}%` }}>
+            {isRunning ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                className="videoImage"
+              ></video>
+            ) : (
+              <img
+                ref={imageRef}
+                src={imgSrc}
+                alt="Video Stream"
+                className="videoImage"
+              />
+            )}
             {popupMessage && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '300px',
-                  height: '50px',
-                  padding: '10px',
-                  backgroundColor: 'rgba(255, 0, 0, 0.8)',
-                  color: 'white',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-                  textAlign: 'center',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  zIndex: 1000,
-                }}
-              >
+              <div className="popupMessage">
                 {popupMessage}
               </div>
             )}
@@ -165,28 +120,20 @@ function App() {
           max="100"
           value={size}
           onChange={(e) => setSize(e.target.value)}
-          style={{ marginTop: '20px', width: '50%' }}
+          className="rangeInput"
         />
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <button onClick={() => setIsVisible(!isVisible)} style={{ padding: '10px 20px' }}>
+        <div className="buttonGroup">
+          <button onClick={() => setIsVisible(!isVisible)} className="actionButton">
             {isVisible ? '화면 숨기기' : '화면 표시'}
           </button>
 
-          <button
-            onClick={toggleRunning}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: 'green',
-              color: 'white',
-            }}
-          >
+          <button onClick={toggleRunning} className="toggleButton">
             {isRunning ? '종료' : '시작'}
           </button>
         </div>
 
-        {/* 추가: 경고음/노래 옵션 선택 */}
-        <div style={{ marginTop: '20px', width: '60%' }}>
+        <div className="radioGroup">
           <label>
             <input
               type="radio"
@@ -196,7 +143,7 @@ function App() {
             />
             경고음 재생
           </label>
-          <label style={{ marginLeft: '20px' }}>
+          <label>
             <input
               type="radio"
               value="song"
@@ -207,15 +154,11 @@ function App() {
           </label>
         </div>
 
-        <div style={{ marginTop: '20px', width: '60%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-            <span role="img" aria-label="Muted Bell">
-              🔕
-            </span>
+        <div className="volumeControl">
+          <div className="volumeHeader">
+            <span role="img" aria-label="Muted Bell">🔕</span>
             <span>안내음성 크기</span>
-            <span role="img" aria-label="Bell">
-              🔔
-            </span>
+            <span role="img" aria-label="Bell">🔔</span>
           </div>
           <input
             type="range"
@@ -224,25 +167,17 @@ function App() {
             step="0.1"
             value={voiceVolume}
             onChange={handleVoiceVolumeChange}
+            className="volumeInput"
             style={{
-              width: '100%',
-              WebkitAppearance: 'none',
-              height: '6px',
-              borderRadius: '5px',
               background: `linear-gradient(to right, #A3D9A5 ${voiceVolume * 100}%, #e0e0e0 ${voiceVolume * 100}%)`,
             }}
           />
         </div>
-
-        <div style={{ marginTop: '20px', width: '60%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-            <span role="img" aria-label="Muted Bell">
-              🔕
-            </span>
+        <div className="volumeControl">
+          <div className="volumeHeader">
+            <span role="img" aria-label="Muted Bell">🔕</span>
             <span>경고음 크기</span>
-            <span role="img" aria-label="Bell">
-              🔔
-            </span>
+            <span role="img" aria-label="Bell">🔔</span>
           </div>
           <input
             type="range"
@@ -251,11 +186,8 @@ function App() {
             step="0.1"
             value={alarmVolume}
             onChange={handleAlarmVolumeChange}
+            className="volumeInput"
             style={{
-              width: '100%',
-              WebkitAppearance: 'none',
-              height: '6px',
-              borderRadius: '5px',
               background: `linear-gradient(to right, #F28B82 ${alarmVolume * 100}%, #e0e0e0 ${alarmVolume * 100}%)`,
             }}
           />

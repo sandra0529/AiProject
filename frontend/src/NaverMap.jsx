@@ -14,25 +14,25 @@ function NaverMap({ isMapVisible }) {
       name: '서부산휴게소',
       lat: 35.157258,
       lng: 128.948777,
-      url: 'https://map.naver.com/v5/search/%EC%84%9C%EB%B6%80%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C',
+      url: 'https://map.naver.com/p/directions/-/14354522.0569622,4185275.0402973,%EC%84%9C%EB%B6%80%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C,1813499640,PLACE_POI/-/transit?c=15.00,0,0,0,dh',
     },
     {
       name: '김해금관가야휴게소',
       lat: 35.269933,
       lng: 129.003134,
-      url: 'https://map.naver.com/v5/search/%EA%B9%80%ED%95%B4%EA%B8%88%EA%B4%80%EA%B0%80%EC%95%BC%ED%9C%B4%EA%B2%8C%EC%86%8C',
+      url: 'https://map.naver.com/p/directions/-/14360638.4618561,4200599.7838852,%EA%B9%80%ED%95%B4%EA%B8%88%EA%B4%80%EA%B0%80%EC%95%BC%ED%9C%B4%EA%B2%8C%EC%86%8C,1110543906,PLACE_POI/-/transit?c=15.00,0,0,0,dh'
     },
     {
       name: '양산휴게소',
       lat: 35.323172,
       lng: 129.056867,
-      url: 'https://map.naver.com/v5/search/%EC%96%91%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C',
+      url: 'https://map.naver.com/p/directions/-/14366512.4796907,4207928.6306907,%EC%96%91%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C(%EC%84%9C%EC%9A%B8%EB%B0%A9%ED%96%A5),11573174,PLACE_POI/-/transit?c=15.00,0,0,0,dh',
     },
     {
       name: '장안휴게소(울산방향)',
       lat: 35.381033,
       lng: 129.248737,
-      url: 'https://map.naver.com/v5/search/%EC%9E%A5%EC%95%88%ED%9C%B4%EA%B2%8C%EC%86%8C',
+      url: 'https://map.naver.com/p/directions/-/14387901.1060891,4215802.5921105,%EC%9E%A5%EC%95%88%ED%9C%B4%EA%B2%8C%EC%86%8C(%EC%9A%B8%EC%82%B0%EB%B0%A9%ED%96%A5),13503854,PLACE_POI/-/transit?c=15.00,0,0,0,dh'
     },
   ];
 
