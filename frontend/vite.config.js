@@ -5,4 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/ai_project/',
+  server: {
+    port: 5173, // 원하는 포트 번호 설정
+  },
 })

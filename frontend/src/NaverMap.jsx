@@ -1,141 +1,181 @@
-import { useEffect, useRef, useState } from 'react';
-import drowsy_driving_icon from './assets/drowsy_driving_icon.png';
+import { useEffect, useRef, useState } from "react";
+import drowsy_driving_icon from "./assets/drowsy_driving_icon.png";
 
-function NaverMap({ isMapVisible }) {
+function NaverMap({ drowsyDetected }) {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [isMapScriptLoaded, setIsMapScriptLoaded] = useState(false);
-  const [userMarker, setUserMarker] = useState(null); // 사용자의 현재 위치 마커 상태 추가
+  const currentPolylineRef = useRef(null);
+  const restStopMarkersRef = useRef([]);
+  const userMarkerRef = useRef(null);
 
-  // 휴게소 목록
   const restStops = [
-    {
-      name: '서부산휴게소',
-      lat: 35.157258,
-      lng: 128.948777,
-      url: 'https://map.naver.com/p/directions/-/14354522.0569622,4185275.0402973,%EC%84%9C%EB%B6%80%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C,1813499640,PLACE_POI/-/transit?c=15.00,0,0,0,dh',
-    },
-    {
-      name: '김해금관가야휴게소',
-      lat: 35.269933,
-      lng: 129.003134,
-      url: 'https://map.naver.com/p/directions/-/14360638.4618561,4200599.7838852,%EA%B9%80%ED%95%B4%EA%B8%88%EA%B4%80%EA%B0%80%EC%95%BC%ED%9C%B4%EA%B2%8C%EC%86%8C,1110543906,PLACE_POI/-/transit?c=15.00,0,0,0,dh'
-    },
-    {
-      name: '양산휴게소',
-      lat: 35.323172,
-      lng: 129.056867,
-      url: 'https://map.naver.com/p/directions/-/14366512.4796907,4207928.6306907,%EC%96%91%EC%82%B0%ED%9C%B4%EA%B2%8C%EC%86%8C(%EC%84%9C%EC%9A%B8%EB%B0%A9%ED%96%A5),11573174,PLACE_POI/-/transit?c=15.00,0,0,0,dh',
-    },
-    {
-      name: '장안휴게소(울산방향)',
-      lat: 35.381033,
-      lng: 129.248737,
-      url: 'https://map.naver.com/p/directions/-/14387901.1060891,4215802.5921105,%EC%9E%A5%EC%95%88%ED%9C%B4%EA%B2%8C%EC%86%8C(%EC%9A%B8%EC%82%B0%EB%B0%A9%ED%96%A5),13503854,PLACE_POI/-/transit?c=15.00,0,0,0,dh'
-    },
+    { name: "서부산휴게소", lat: 35.157258, lng: 128.948777 },
+    { name: "김해금관가야휴게소", lat: 35.269933, lng: 129.003134 },
+    { name: "양산휴게소", lat: 35.323172, lng: 129.056867 },
+    { name: "장안휴게소(울산방향)", lat: 35.381033, lng: 129.248737 },
   ];
 
   // 네이버 지도 스크립트 로드
   useEffect(() => {
     const loadMapScript = () => {
       if (!window.naver) {
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.src = `https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${import.meta.env.VITE_NAVER_CLIENT_ID}`;
         script.async = true;
-        script.onload = () => setIsMapScriptLoaded(true);
+        script.onload = () => initializeMap();
         document.head.appendChild(script);
       } else {
-        setIsMapScriptLoaded(true);
+        initializeMap();
       }
+    };
+
+    const initializeMap = () => {
+      const mapOptions = {
+        center: new window.naver.maps.LatLng(35.157258, 128.948777),
+        zoom: 10,
+      };
+      const newMap = new window.naver.maps.Map(mapRef.current, mapOptions);
+      setMap(newMap);
     };
 
     loadMapScript();
   }, []);
 
-  // 현재 위치 가져오기
+  // 현재 위치 실시간 추적
   useEffect(() => {
-    if (isMapScriptLoaded) {
-      const success = (location) => {
-        const newLocation = {
-          lat: location.coords.latitude,
-          lng: location.coords.longitude,
-        };
-        setCurrentLocation(newLocation);
-      };
-
-      const error = () => {
-        const defaultLocation = { lat: 37.5666103, lng: 126.9783882 }; // 서울시청 기본 좌표
-        setCurrentLocation(defaultLocation);
-      };
-
-      if (navigator.geolocation) {
-        // 현재 위치 추적 (watchPosition 사용)
-        const watcher = navigator.geolocation.watchPosition(success, error, {
-          enableHighAccuracy: true,
-        });
-        return () => navigator.geolocation.clearWatch(watcher); // 컴포넌트 언마운트 시 watcher 해제
-      } else {
-        error();
-      }
+    let watchId;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        },
+        { enableHighAccuracy: true, maximumAge: 1000 }
+      );
     }
-  }, [isMapScriptLoaded]);
 
-  // 지도 초기화 및 업데이트
+    return () => {
+      if (navigator.geolocation && watchId !== undefined) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, []);
+
+  // 사용자 위치 마커 및 지도 중심 업데이트
   useEffect(() => {
-    if (currentLocation && window.naver && window.naver.maps) {
-      if (!map) {
-        // 지도 초기화
-        const mapOptions = {
-          center: new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng),
-          zoom: 9,
-        };
-        const newMap = new window.naver.maps.Map(mapRef.current, mapOptions);
-        setMap(newMap);
+    if (!map || !currentLocation) return;
 
-        // 현재 위치 마커 초기화
-        const marker = new window.naver.maps.Marker({
-          map: newMap,
-          position: mapOptions.center,
-          icon: {
-            content: `<div style="width:50px;height:50px;background:url(${drowsy_driving_icon}) no-repeat center/contain;"></div>`,
-            anchor: new window.naver.maps.Point(25, 25),
-          },
-        });
-        setUserMarker(marker); // 마커 상태 업데이트
+    // 기존 사용자 마커 제거
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setMap(null);
+    }
 
-        // 휴게소 마커 추가
-        restStops.forEach((stop) => {
-          const marker = new window.naver.maps.Marker({
-            map: newMap,
-            position: new window.naver.maps.LatLng(stop.lat, stop.lng),
-            title: stop.name,
-          });
+    // 새로운 사용자 마커 추가
+    const userMarker = new window.naver.maps.Marker({
+      map,
+      position: new window.naver.maps.LatLng(
+        currentLocation.lat,
+        currentLocation.lng
+      ),
+      icon: {
+        content: `<div style="width:50px;height:50px;background:url(${drowsy_driving_icon}) no-repeat center/contain;"></div>`,
+        anchor: new window.naver.maps.Point(25, 25),
+      },
+    });
+    userMarkerRef.current = userMarker;
 
-          // 마커 클릭 이벤트
-          window.naver.maps.Event.addListener(marker, 'click', () => {
-            window.open(stop.url, '_blank');
-          });
-        });
-      } else {
-        // 지도 중심 업데이트
-        const newCenter = new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng);
-        map.setCenter(newCenter);
+    // 지도 중심을 현재 위치로 이동
+    map.setCenter(new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng));
+  }, [map, currentLocation]);
 
-        // 사용자의 현재 위치 마커 업데이트
-        if (userMarker) {
-          userMarker.setPosition(newCenter);
+  // 졸음운전 감지 시 휴게소 마커 표시
+  useEffect(() => {
+    if (!map || !currentLocation) return;
+
+    // 졸음운전이 감지되지 않았으면 휴게소 마커 제거
+    if (!drowsyDetected) {
+      restStopMarkersRef.current.forEach((marker) => marker.setMap(null));
+      restStopMarkersRef.current = [];
+      return;
+    }
+
+    // 이미 휴게소 마커가 추가되었으면 무시
+    if (restStopMarkersRef.current.length > 0) return;
+
+    // 휴게소 마커 추가
+    restStops.forEach((stop) => {
+      const marker = new window.naver.maps.Marker({
+        map,
+        position: new window.naver.maps.LatLng(stop.lat, stop.lng),
+        title: stop.name,
+      });
+
+      restStopMarkersRef.current.push(marker);
+
+      window.naver.maps.Event.addListener(marker, "click", async () => {
+        if (currentPolylineRef.current) {
+          currentPolylineRef.current.setMap(null);
         }
-      }
-    }
-  }, [currentLocation, map]);
 
-  // 지도가 보이지 않을 경우 렌더링 중단
-  if (!isMapVisible) return null;
+        const origin = `${currentLocation.lng},${currentLocation.lat}`;
+        const destination = `${stop.lng},${stop.lat}`;
+        await fetchRouteData(origin, destination);
+      });
+    });
+  }, [map, currentLocation, drowsyDetected]);
+
+  // 경로 데이터 요청 및 지도에 경로 표시
+  const fetchRouteData = async (origin, destination) => {
+    const url = `http://localhost:5000/directions?start=${origin}&goal=${destination}&option=trafast`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.code === 0) {
+        const routePath = data.route.trafast[0].path.map(
+          (point) => new window.naver.maps.LatLng(point[1], point[0])
+        );
+
+        if (currentPolylineRef.current) {
+          currentPolylineRef.current.setMap(null);
+        }
+
+        const polyline = new window.naver.maps.Polyline({
+          map,
+          path: routePath,
+          strokeColor: "#00A000",
+          strokeWeight: 5,
+        });
+        currentPolylineRef.current = polyline;
+
+        // 경로 전체를 보여주도록 지도 영역 조정
+        const bounds = new window.naver.maps.LatLngBounds();
+        routePath.forEach((latlng) => bounds.extend(latlng));
+        map.fitBounds(bounds);
+      } else {
+        console.error("경로를 가져올 수 없습니다:", data.message);
+        alert("경로를 불러올 수 없습니다. 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.error("API 요청 중 오류 발생:", error);
+      alert("API 요청 중 오류가 발생했습니다.");
+    }
+  };
 
   return (
-    <div style={{ flex: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #ddd', borderRadius: '10px', marginLeft: '20px' }}>
-      <div ref={mapRef} style={{ width: '100%', height: '100%' }}></div>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+      ref={mapRef}
+    >
+      {!map && <p>Loading map...</p>}
     </div>
   );
 }
