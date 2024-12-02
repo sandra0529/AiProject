@@ -26,7 +26,10 @@ classification = {"classification": 0}  # 0: 정상, 1: 긴급, 2: 의심
 # Detection 결과 저장용 큐
 detection_queue = deque(maxlen=5)
 
+# 아두이노에 신호 보내기(아두이노 코드의 효율성을 위해 특수 문자로 보냄, '|' : 0, '~' : 1, '$' : 2)
 state = ['|', '~', '$']
+
+
 # Classification 대분류 설정 함수
 def get_classification(detection_list):
     global classification
@@ -105,7 +108,7 @@ async def get_classification_endpoint():
     print("Returning Classification:", classification)
     return JSONResponse(content=classification)
 
-# 아두이노에 JSON 데이터 전달(만약 프론트엔드에서 시작안할 시 기본값 0만 줌)
+# 아두이노에 classification 결과 보내기, 아두이노 esp 모듈이 받을 수 있는 데이터량이 제한되어있기에 meta data 일부를 삭제
 @app.get("/arduino_signal")
 async def get_signal() :
     return Response(content=state[classification], media_type=None, headers={"Connection": "close"})
