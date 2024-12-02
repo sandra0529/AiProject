@@ -1,0 +1,15 @@
+/* App.css */
+
+.mapPopupMessage {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  padding: 10px;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  z-index: 1000;
+}

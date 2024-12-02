@@ -1,0 +1,43 @@
+.leftSidebar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1000;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  margin: 15px 0;
+  cursor: pointer;
+}
+
+.iconWrapper {
+  position: relative;
+}
+
+.options,
+.volumeOptions {
+  position: absolute;
+  left: 50px;
+  top: -10px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.options .iconButton,
+.volumeOptions .iconButton {
+  margin: 5px 0;
+}
+
+.volumeOptions input[type="range"] {
+  width: 100px;
+}
