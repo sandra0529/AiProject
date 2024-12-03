@@ -98,13 +98,13 @@ def predict(frame):
 # 프론트엔드에 JSON 데이터 전달
 @app.get("/prediction")
 async def get_classification_endpoint():
-    # camera = cv2.VideoCapture(0) <- 만약 비디오 화면을 프론트에서 받는다면? 
-    # while True :
-    #     success, frame = camera.read()
-    #     if not success :
-    #         break
-    #     else :
-    #         predict(frame)
+    camera = cv2.VideoCapture(0) # <- 만약 비디오 화면을 프론트에서 받는다면? 
+    while True :
+        success, frame = camera.read()
+        if not success :
+            break
+        else :
+            predict(frame)
     print("Returning Classification:", classification)
     return JSONResponse(content=classification)
 
@@ -114,23 +114,23 @@ async def get_signal() :
     return Response(content=state[classification], media_type=None, headers={"Connection": "close"})
 
 # 실시간 비디오 스트리밍
-@app.get("/video_feed")
-async def video_feed():
-    def generate_frames():
-        camera = cv2.VideoCapture(0)  # 웹캠 연결
-        while True:
-            success, frame = camera.read()
-            if not success:
-                break
-            else:
-                # 프레임 예측 수행
-                predict(frame)
+# @app.get("/video_feed")
+# async def video_feed():
+#     def generate_frames():
+#         camera = cv2.VideoCapture(0)  # 웹캠 연결
+#         while True:
+#             success, frame = camera.read()
+#             if not success:
+#                 break
+#             else:
+#                 # 프레임 예측 수행
+#                 predict(frame)
 
-                # 프레임을 JPEG로 인코딩
-                ret, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        camera.release()
+#                 # 프레임을 JPEG로 인코딩
+#                 ret, buffer = cv2.imencode('.jpg', frame)
+#                 frame = buffer.tobytes()
+#                 yield (b'--frame\r\n'
+#                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+#         camera.release()
 
-    return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+#     return StreamingResponse(generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame")
