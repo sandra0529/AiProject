@@ -3,6 +3,7 @@ import Video from './Video.jsx';
 import NaverMap from './NaverMap.jsx';
 import LeftSidebar from './LeftSidebar.jsx';
 import './App.css';
+import BottomSidebar from './BottomSidebar.jsx';
 
 function App() {
   const [drowsyDetected, setDrowsyDetected] = useState(false);
@@ -51,8 +52,12 @@ function App() {
         volumeLevel={volumeLevel}
         setVolumeLevel={setVolumeLevel}
       />
+
+<BottomSidebar/>
     </div>
   );
 }
+
+
 
 export default App;

@@ -1,0 +1,19 @@
+/* 하단 사이드바 (주소 표시) */
+.bottomSidebar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%); /* 가운데 정렬 */
+  background-color: rgba(224, 224, 224, 0.9); /* 투명 배경 */
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 100; /* 주소 표시가 다른 요소 위에 오도록 설정 */
+}
