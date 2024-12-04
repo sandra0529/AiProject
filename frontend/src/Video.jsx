@@ -13,24 +13,48 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
   const suspicionVoiceAudioRef = useRef(new Audio(suspicionVoiceAlertSound));
   const songAudioRef = useRef(new Audio(songSample));
   const videoRef = useRef(null);
-  const videoFeedUrl = 'http://localhost:8000/video_feed'; // 비디오 스트림 URL
-  const fastApiUrl = 'http://localhost:8000/prediction'; // FastAPI 엔드포인트
+
+  // FastAPI URL
+  const videoFeedUrl = 'http://192.168.0.3:8000/video_feed'; // FastAPI 비디오 스트림 URL
+  const fastApiUrl = 'http://192.168.0.3:8000/prediction'; // FastAPI 예측 값 URL
 
   useEffect(() => {
-    // 비디오 스트림을 URL에서 로드
+    // FastAPI에서 비디오 스트림을 로드
     if (videoRef.current) {
-      videoRef.current.src = videoFeedUrl; // URL 설정
+      videoRef.current.src = videoFeedUrl;
       videoRef.current.play().catch((error) => {
         console.error('비디오 재생 오류:', error);
       });
     }
-  }, [videoFeedUrl]);
+
+    // 개발 중 웹캠 사용 코드 (주석 해제 시 활성화)
+    /*
+    let stream;
+    const startWebcam = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('웹캠 접근 오류:', error);
+      }
+    };
+    startWebcam();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+    */
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (isAlertActive) return;
 
-      // FastAPI에서 신호 받기
+      // FastAPI에서 예측 값 가져오기
       fetch(fastApiUrl)
         .then((response) => response.json())
         .then((jsonData) => {
@@ -42,11 +66,12 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
           console.error('FastAPI Fetch Error:', error);
         });
 
-      // 로컬에서 모의 신호 생성 (주석 해제 시 활성화)
-      // const classification = generateMockSignal();
-      // console.log('모의 신호 값:', classification);
-      // handleSignal(classification);
-
+      // 개발 중 랜덤 신호 생성 코드 (주석 해제 시 활성화)
+      /*
+      const classification = generateMockSignal();
+      console.log('모의 신호 값:', classification);
+      handleSignal(classification);
+      */
     }, 1000);
 
     return () => clearInterval(interval);
