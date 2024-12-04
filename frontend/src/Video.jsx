@@ -13,28 +13,18 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
   const suspicionVoiceAudioRef = useRef(new Audio(suspicionVoiceAlertSound));
   const songAudioRef = useRef(new Audio(songSample));
   const videoRef = useRef(null);
+  const videoFeedUrl = 'http://localhost:8000/video_feed'; // 비디오 스트림 URL
   const fastApiUrl = 'http://localhost:8000/prediction'; // FastAPI 엔드포인트
 
   useEffect(() => {
-    let stream;
-    const startWebcam = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('웹캠 접근 오류:', error);
-      }
-    };
-    startWebcam();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+    // 비디오 스트림을 URL에서 로드
+    if (videoRef.current) {
+      videoRef.current.src = videoFeedUrl; // URL 설정
+      videoRef.current.play().catch((error) => {
+        console.error('비디오 재생 오류:', error);
+      });
+    }
+  }, [videoFeedUrl]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -52,12 +42,11 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
           console.error('FastAPI Fetch Error:', error);
         });
 
-      
       // 로컬에서 모의 신호 생성 (주석 해제 시 활성화)
       // const classification = generateMockSignal();
       // console.log('모의 신호 값:', classification);
       // handleSignal(classification);
-      
+
     }, 1000);
 
     return () => clearInterval(interval);
