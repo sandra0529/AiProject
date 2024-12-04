@@ -13,6 +13,7 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
   const suspicionVoiceAudioRef = useRef(new Audio(suspicionVoiceAlertSound));
   const songAudioRef = useRef(new Audio(songSample));
   const videoRef = useRef(null);
+  const fastApiUrl = 'http://localhost:8000/prediction'; // FastAPI 엔드포인트
 
   useEffect(() => {
     let stream;
@@ -39,42 +40,60 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
     const interval = setInterval(() => {
       if (isAlertActive) return;
 
-      const classification = generateMockSignal();
-      console.log('모의 신호 값:', classification);
+      // FastAPI에서 신호 받기
+      fetch(fastApiUrl)
+        .then((response) => response.json())
+        .then((jsonData) => {
+          const classification = jsonData.classification; // FastAPI에서 반환된 예측 값
+          console.log('FastAPI 신호 값:', classification);
+          handleSignal(classification);
+        })
+        .catch((error) => {
+          console.error('FastAPI Fetch Error:', error);
+        });
 
-      if (classification === 0) {
-        console.log('정상 상태: 운전자 이상 행동이 없습니다.');
-        setPopupMessage('');
-        setDrowsyDetected(false);
-      } else if (classification === 1) {
-        console.log('졸음운전 중입니다. 환기를 하십시오.');
-        setPopupMessage('졸음운전 중입니다. 환기를 하십시오.');
-        setIsAlertActive(true);
-        setDrowsyDetected(true);
-        playAlert(() => {
-          emergencyVoiceAudioRef.current.play();
-          emergencyVoiceAudioRef.current.onended = () => {
-            setPopupMessage('');
-            setIsAlertActive(false);
-          };
-        });
-      } else if (classification === 2) {
-        console.log('졸음운전이 의심됩니다. 주의하세요.');
-        setPopupMessage('졸음운전이 의심됩니다. 주의하세요.');
-        setIsAlertActive(true);
-        setDrowsyDetected(true);
-        playAlert(() => {
-          suspicionVoiceAudioRef.current.play();
-          suspicionVoiceAudioRef.current.onended = () => {
-            setPopupMessage('');
-            setIsAlertActive(false);
-          };
-        });
-      }
+      
+      // 로컬에서 모의 신호 생성 (주석 해제 시 활성화)
+      // const classification = generateMockSignal();
+      // console.log('모의 신호 값:', classification);
+      // handleSignal(classification);
+      
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isAlertActive, setDrowsyDetected, setPopupMessage]);
+  }, [isAlertActive]);
+
+  const handleSignal = (classification) => {
+    if (classification === 0) {
+      console.log('정상 상태: 운전자 이상 행동이 없습니다.');
+      setPopupMessage('');
+      setDrowsyDetected(false);
+    } else if (classification === 1) {
+      console.log('졸음운전 중입니다. 환기를 하십시오.');
+      setPopupMessage('졸음운전 중입니다. 환기를 하십시오.');
+      setIsAlertActive(true);
+      setDrowsyDetected(true);
+      playAlert(() => {
+        emergencyVoiceAudioRef.current.play();
+        emergencyVoiceAudioRef.current.onended = () => {
+          setPopupMessage('');
+          setIsAlertActive(false);
+        };
+      });
+    } else if (classification === 2) {
+      console.log('졸음운전이 의심됩니다. 주의하세요.');
+      setPopupMessage('졸음운전이 의심됩니다. 주의하세요.');
+      setIsAlertActive(true);
+      setDrowsyDetected(true);
+      playAlert(() => {
+        suspicionVoiceAudioRef.current.play();
+        suspicionVoiceAudioRef.current.onended = () => {
+          setPopupMessage('');
+          setIsAlertActive(false);
+        };
+      });
+    }
+  };
 
   const playAlert = (onEndCallback) => {
     if (playMode === 'alarm') {
@@ -121,12 +140,7 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
       }}
     >
       <div className="videoContainer">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          className="videoImage"
-        ></video>
+        <video ref={videoRef} autoPlay muted className="videoImage"></video>
       </div>
     </Rnd>
   );
