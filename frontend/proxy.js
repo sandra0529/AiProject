@@ -52,20 +52,6 @@ app.get('/reverse-geocode', async (req, res) => {
   }
 });
 
-// IP 기반 위치 정보 요청 추가
-app.get('/ip-location', async (req, res) => {
-  try {
-    const response = await axios.get('http://ip-api.com/json/');
-    res.json({
-      lat: response.data.lat,
-      lon: response.data.lon,
-    });
-  } catch (error) {
-    console.error('Error fetching IP location:', error.message);
-    res.status(500).json({ error: 'Failed to fetch IP location' });
-  }
-});
-
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });

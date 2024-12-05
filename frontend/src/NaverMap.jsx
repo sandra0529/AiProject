@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import drowsy_driving_icon from "./assets/drowsy_driving_icon.png";
-import axios from "axios"; // axios 추가
 
 function NaverMap({ drowsyDetected }) {
   const mapRef = useRef(null);
@@ -43,71 +42,26 @@ function NaverMap({ drowsyDetected }) {
     loadMapScript();
   }, []);
 
-  // 위치 정보를 가져오는 함수
-  const getCurrentLocation = async () => {
-    return new Promise((resolve, reject) => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            resolve({ lat: latitude, lng: longitude });
-          },
-          async (error) => {
-            console.error("Geolocation error:", error.message);
-            // geolocation 실패 시 IP 기반 위치 정보 가져오기
-            try {
-              const ipLocation = await getLocationFromIP();
-              resolve(ipLocation);
-            } catch (ipError) {
-              console.error("IP location error:", ipError.message);
-              reject(ipError);
-            }
-          },
-          { enableHighAccuracy: true, maximumAge: 1000 }
-        );
-      } else {
-        // geolocation이 지원되지 않는 경우
-        console.warn("Geolocation is not supported.");
-        // IP 기반 위치 정보 가져오기
-        getLocationFromIP()
-          .then(resolve)
-          .catch(reject);
-      }
-    });
-  };
-
-  // IP 기반 위치 정보를 가져오는 함수
-  const getLocationFromIP = async () => {
-    try {
-      // 프록시 서버를 통해 IP 위치 정보 API 호출
-      const response = await axios.get("http://localhost:5000/ip-location");
-      const { lat, lon } = response.data;
-      return { lat, lng: lon };
-    } catch (error) {
-      throw new Error("Failed to get location from IP");
-    }
-  };
-
   // 현재 위치 실시간 추적
   useEffect(() => {
-    let intervalId;
-
-    const fetchLocation = async () => {
-      try {
-        const location = await getCurrentLocation();
-        setCurrentLocation(location);
-      } catch (error) {
-        console.error("Error fetching location:", error.message);
-      }
-    };
-
-    // 주기적으로 위치 정보 업데이트 (예: 10초마다)
-    intervalId = setInterval(fetchLocation, 10000);
-    // 컴포넌트 마운트 시 위치 정보 가져오기
-    fetchLocation();
+    let watchId;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+        },
+        { enableHighAccuracy: true, maximumAge: 1000 }
+      );
+    }
 
     return () => {
-      clearInterval(intervalId);
+      if (navigator.geolocation && watchId !== undefined) {
+        navigator.geolocation.clearWatch(watchId);
+      }
     };
   }, []);
 
@@ -135,9 +89,7 @@ function NaverMap({ drowsyDetected }) {
     userMarkerRef.current = userMarker;
 
     // 지도 중심을 현재 위치로 이동
-    map.setCenter(
-      new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng)
-    );
+    map.setCenter(new window.naver.maps.LatLng(currentLocation.lat, currentLocation.lng));
   }, [map, currentLocation]);
 
   // 졸음운전 감지 시 휴게소 마커 표시
