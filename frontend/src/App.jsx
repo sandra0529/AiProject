@@ -7,7 +7,7 @@ import BottomSidebar from './BottomSidebar.jsx';
 
 function App() {
   const [drowsyDetected, setDrowsyDetected] = useState(false);
-  const [isVideoVisible, setIsVideoVisible] = useState(false); // 초기값 false로 설정
+  const [isVideoVisible, setIsVideoVisible] = useState(true); // 초기값 true로 설정
   const [playMode, setPlayMode] = useState('alarm');
   const [volumeLevel, setVolumeLevel] = useState(0.5);
   const [popupMessage, setPopupMessage] = useState(''); // popupMessage 상태 추가

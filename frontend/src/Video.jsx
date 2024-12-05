@@ -3,6 +3,7 @@ import alertSound from './assets/red-alert_nuclear_buzzer-99741.mp3';
 import emergencyVoiceAlertSound from './assets/emergency_voice_alert.m4a';
 import suspicionVoiceAlertSound from './assets/suspicion_voice_alert.m4a';
 import songSample from './assets/sample_song.mp3';
+import place_holder from './assets/place_holder.webp';
 import './Video.css';
 import { Rnd } from 'react-rnd';
 
@@ -12,42 +13,16 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
   const emergencyVoiceAudioRef = useRef(new Audio(emergencyVoiceAlertSound));
   const suspicionVoiceAudioRef = useRef(new Audio(suspicionVoiceAlertSound));
   const songAudioRef = useRef(new Audio(songSample));
-  const videoRef = useRef(null);
+  const [imgSrc, setImgSrc] = useState(place_holder); // Placeholder 이미지
+  const imageRef = useRef(null);
 
   // FastAPI URL
-  const videoFeedUrl = 'http://192.168.0.3:8000/video_feed'; // FastAPI 비디오 스트림 URL
-  const fastApiUrl = 'http://192.168.0.3:8000/prediction'; // FastAPI 예측 값 URL
+  const videoFeedUrl = 'http://192.168.0.6:8000/video_feed'; // FastAPI 비디오 스트림 URL
+  const fastApiUrl = 'http://192.168.0.6:8000/prediction'; // FastAPI 예측 값 URL
 
   useEffect(() => {
-    // FastAPI에서 비디오 스트림을 로드
-    if (videoRef.current) {
-      videoRef.current.src = videoFeedUrl;
-      videoRef.current.play().catch((error) => {
-        console.error('비디오 재생 오류:', error);
-      });
-    }
-
-    // 개발 중 웹캠 사용 코드 (주석 해제 시 활성화)
-    /*
-    let stream;
-    const startWebcam = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('웹캠 접근 오류:', error);
-      }
-    };
-    startWebcam();
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-    */
+    // 이미지 소스를 비디오 피드 URL로 설정
+    setImgSrc(videoFeedUrl);
   }, []);
 
   useEffect(() => {
@@ -154,7 +129,13 @@ function Video({ setDrowsyDetected, isVisible, playMode, volumeLevel, setPopupMe
       }}
     >
       <div className="videoContainer">
-        <video ref={videoRef} autoPlay muted className="videoImage"></video>
+        <img
+          ref={imageRef}
+          src={imgSrc}
+          alt="Video Stream"
+          className="videoImage"
+          onError={() => setImgSrc(place_holder)}
+        />
       </div>
     </Rnd>
   );
