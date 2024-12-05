@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 import cv2
@@ -98,13 +98,13 @@ def predict(frame):
 # 프론트엔드에 JSON 데이터 전달
 @app.get("/prediction")
 async def get_classification_endpoint():
-    # camera = cv2.VideoCapture(0) # <- 만약 비디오 화면을 프론트에서 받는다면? 
-    # while True :
-    #     success, frame = camera.read()
-    #     if not success :
-    #         break
-    #     else :
-    #         predict(frame)
+    camera = cv2.VideoCapture(0) # <- 만약 비디오 화면을 프론트에서 받는다면? 
+    while True :
+        success, frame = camera.read()
+        if not success :
+            break
+        else :
+            predict(frame)
     print("Returning Classification:", classification)
     return JSONResponse(content=classification)
 
@@ -113,11 +113,11 @@ async def get_classification_endpoint():
 async def get_signal() :
     return Response(content=state[classification], media_type=None, headers={"Connection": "close"})
 
+camera = cv2.VideoCapture(0) # 웹캠 연결
 # 실시간 비디오 스트리밍
 @app.get("/video_feed")
 async def video_feed():
     def generate_frames():
-        camera = cv2.VideoCapture(0)  # 웹캠 연결
         while True:
             success, frame = camera.read()
             if not success:
